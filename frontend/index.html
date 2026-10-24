@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Kalori ve besin takip sistemi: günlük kayıt, bilimsel hedefler ve haftalık değerlendirme.">
+<meta name="referrer" content="no-referrer">
+<title>Kalori ve Besin Takip Sistemi</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<a class="atla" href="#icerik">İçeriğe atla</a>
+
+<!-- ================= ÜST BAR ================= -->
+<header class="ustbar">
+  <div class="kapsayici ustbar-ic">
+    <div class="marka">
+      <span class="marka-nokta" aria-hidden="true"></span>
+      <div class="marka-metin">
+        <span class="marka-ad">Besin Takibi</span>
+        <span class="marka-alt">Kayıtlar PostgreSQL veritabanında tutulur</span>
+      </div>
+    </div>
+    <div id="kullanici-alani" class="kullanici-alani"></div>
+  </div>
+</header>
+
+<main id="icerik" class="kapsayici">
+
+  <!-- ================= GİRİŞ / KAYIT ================= -->
+  <section id="gorunum-giris" class="gorunum giris-gorunum" hidden>
+
+    <div class="kart giris-kart">
+      <h1 class="kart-baslik" id="giris-baslik">Giriş yap</h1>
+      <p class="kart-aciklama" id="giris-aciklama">
+        Besin günlüğünüz yalnızca sizin oturumunuzla erişilebilir. Her sorguda sahiplik doğrulanır.
+      </p>
+
+      <div class="sekme-cift" role="tablist" aria-label="Hesap işlemleri">
+        <button type="button" class="sekme-cift-dugme is-aktif" id="dugme-giris-sekme"
+                role="tab" aria-selected="true" aria-controls="form-giris">Giriş</button>
+        <button type="button" class="sekme-cift-dugme" id="dugme-kayit-sekme"
+                role="tab" aria-selected="false" aria-controls="form-kayit">Kayıt ol</button>
+      </div>
+
+      <!-- Giriş formu -->
+      <form id="form-giris" novalidate autocomplete="on">
+        <div class="alan">
+          <label for="giris-eposta">E-posta</label>
+          <input type="email" id="giris-eposta" name="email" autocomplete="email"
+                 required maxlength="254" inputmode="email">
+        </div>
+        <div class="alan">
+          <label for="giris-parola">Parola</label>
+          <input type="password" id="giris-parola" name="password" autocomplete="current-password"
+                 required maxlength="72">
+        </div>
+        <div class="hata-kutusu" id="giris-hata" role="alert" hidden></div>
+        <button type="submit" class="dugme dugme-birincil dugme-tam" id="giris-gonder">Giriş yap</button>
+      </form>
+
+      <!-- Kayıt formu -->
+      <form id="form-kayit" novalidate autocomplete="on" hidden>
+        <div class="alan">
+          <label for="kayit-ad">Ad <span class="zorunlu">*</span></label>
+          <input type="text" id="kayit-ad" name="name" autocomplete="name" required maxlength="100">
+        </div>
+        <div class="alan">
+          <label for="kayit-eposta">E-posta <span class="zorunlu">*</span></label>
+          <input type="email" id="kayit-eposta" name="email" autocomplete="email" required maxlength="254">
+        </div>
+        <div class="alan">
+          <label for="kayit-parola">Parola <span class="zorunlu">*</span></label>
+          <input type="password" id="kayit-parola" name="password" autocomplete="new-password"
+                 required minlength="8" maxlength="72">
+          <p class="alan-not">En az 8 karakter. Parola bcrypt ile hash'lenir, düz metin saklanmaz.</p>
+        </div>
+
+        <fieldset class="alan-cizgi">
+          <legend>Profil bilgileri (isteğe bağlı)</legend>
+          <p class="alan-not">
+            Bu alanları boş bırakabilirsiniz. Eksik bilgi olduğunda hedef <strong>hesaplanmaz</strong>;
+            uygulama tahmin uydurmak yerine "bilgi eksik" der.
+          </p>
+          <div class="alan-izgara">
+            <div class="alan">
+              <label for="kayit-yas">Yaş</label>
+              <input type="number" id="kayit-yas" name="age" min="1" max="120" step="1" inputmode="numeric">
+            </div>
+            <div class="alan">
+              <label for="kayit-boy">Boy (cm)</label>
+              <input type="number" id="kayit-boy" name="heightCm" min="40" max="250" step="0.1" inputmode="decimal">
+            </div>
+            <div class="alan">
+              <label for="kayit-kilo">Kilo (kg)</label>
+              <input type="number" id="kayit-kilo" name="weightKg" min="2" max="400" step="0.1" inputmode="decimal">
+            </div>
+            <div class="alan">
+              <label for="kayit-cinsiyet">Biyolojik cinsiyet</label>
+              <select id="kayit-cinsiyet" name="biologicalSex"></select>
+            </div>
+            <div class="alan">
+              <label for="kayit-aktivite">Aktivite düzeyi</label>
+              <select id="kayit-aktivite" name="activityLevel"></select>
+            </div>
+            <div class="alan">
+              <label for="kayit-hedef">Hedef</label>
+              <select id="kayit-hedef" name="goal"></select>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="hata-kutusu" id="kayit-hata" role="alert" hidden></div>
+        <button type="submit" class="dugme dugme-birincil dugme-tam" id="kayit-gonder">Hesap oluştur</button>
+      </form>
+    </div>
+
+    <aside class="kart bilgi-kart">
+      <h2 class="kart-baslik kart-baslik-kucuk">Bu uygulama ne yapar, ne yapmaz?</h2>
+      <ul class="madde-liste">
+        <li>Günlük enerji ve besin ögesi toplamlarını <strong>SQL tarafında</strong> hesaplar: (gram ÷ 100) × 100&nbsp;g değeri.</li>
+        <li>Hedefleri bilimsel kaynaklara dayandırır ve her hedefin <strong>kaynağını gösterir</strong>.</li>
+        <li>Kayıt olmayan günü <strong>sıfır tüketim saymaz</strong>.</li>
+        <li>Teşhis koymaz, hastalık veya eksiklik ilan etmez; yalnızca kayıtlarınızı özetler.</li>
+        <li>Yetişkin hedeflerini çocuk, ergen, gebe ve özel sağlık durumu olanlar için <strong>otomatik uygulamaz</strong>.</li>
+      </ul>
+    </aside>
+  </section>
+
+  <!-- ================= UYGULAMA ================= -->
+  <div id="gorunum-uygulama" hidden>
+
+    <!-- Tarih çubuğu -->
+    <div class="tarih-cubugu kart kart-sikisik">
+      <button type="button" class="dugme dugme-ikon" id="gun-geri" aria-label="Önceki gün">&larr;</button>
+      <div class="tarih-orta">
+        <label for="tarih-secici">Gün</label>
+        <input type="date" id="tarih-secici" name="date">
+        <span class="tarih-okunur" id="tarih-okunur"></span>
+      </div>
+      <button type="button" class="dugme dugme-ikon" id="gun-ileri" aria-label="Sonraki gün">&rarr;</button>
+      <button type="button" class="dugme dugme-ikincil" id="gun-bugun">Bugün</button>
+    </div>
+
+    <!-- Ana sekmeler -->
+    <nav class="sekmeler" id="sekmeler" aria-label="Bölümler">
+      <button type="button" class="sekme is-aktif" data-panel="bugun" aria-selected="true">Bugün</button>
+      <button type="button" class="sekme" data-panel="raporlar" aria-selected="false">Raporlar</button>
+      <button type="button" class="sekme" data-panel="profil" aria-selected="false">Profil ve Hedefler</button>
+    </nav>
+
+    <!-- ============ PANEL: BUGÜN ============ -->
+    <div class="panel" id="panel-bugun">
+
+      <!-- BÖLÜM 1 — Kalori özeti -->
+      <section class="kart" aria-labelledby="b1-baslik">
+        <h2 class="kart-baslik" id="b1-baslik">Günlük kalori özeti</h2>
+        <div class="ozet-ust">
+          <div class="buyuk-sayi">
+            <span id="kalori-alinan">—</span>
+            <span class="buyuk-sayi-birim">kcal</span>
+          </div>
+          <div class="ozet-sag">
+            <p class="ozet-etiket" id="kalori-hedef-etiket">Hedef yükleniyor…</p>
+            <p class="ozet-ayrinti" id="kalori-fark"></p>
+          </div>
+        </div>
+        <div id="kalori-cubuk-alan"></div>
+        <p class="not" id="kalori-not"></p>
+      </section>
+
+      <!-- BÖLÜM 2 — Makrolar -->
+      <section class="kart" aria-labelledby="b2-baslik">
+        <h2 class="kart-baslik" id="b2-baslik">Protein · Karbonhidrat · Yağ</h2>
+        <p class="kart-aciklama">
+          Tek bir hedef değer yerine <strong>aralık</strong> gösterilir; kaynaklar arasında gerçek
+          farklılıklar vardır (ör. protein: EFSA 0,83 g/kg ↔ DGA 1,2–1,6 g/kg).
+        </p>
+        <div id="makro-liste" class="gosterge-liste"></div>
+      </section>
+
+      <!-- BÖLÜM 3 — Şeker ve lif -->
+      <section class="kart" aria-labelledby="b3-baslik">
+        <h2 class="kart-baslik" id="b3-baslik">Şeker ve lif</h2>
+        <p class="kart-aciklama">
+          <strong>Toplam şeker</strong> ile <strong>ilave/serbest şeker</strong> ayrı tutulur.
+          Toplam şeker meyvedeki fruktozu ve sütteki laktozu da içerir; WHO'nun sınırı
+          yalnızca ilave/serbest şeker içindir.
+        </p>
+        <div id="seker-lif-liste" class="gosterge-liste"></div>
+        <div id="seker-uyari"></div>
+      </section>
+
+      <!-- BÖLÜM 4 — Sebze / meyve / baklagil -->
+      <section class="kart" aria-labelledby="b4-baslik">
+        <h2 class="kart-baslik" id="b4-baslik">Sebze · Meyve · Baklagil</h2>
+        <p class="kart-aciklama" id="b4-aciklama">
+          Porsiyon = <span id="porsiyon-gram">80</span> g yenilebilir kısım.
+        </p>
+        <div id="grup-liste" class="grup-izgara"></div>
+      </section>
+
+      <!-- BÖLÜM 5 — Besin arama ve miktar girişi -->
+      <section class="kart" aria-labelledby="b5-baslik">
+        <h2 class="kart-baslik" id="b5-baslik">Besin ekle</h2>
+
+        <div class="arama-satir">
+          <div class="alan alan-buyu">
+            <label for="besin-arama">Besin adı</label>
+            <input type="search" id="besin-arama" placeholder="ör. mercimek, yoğurt, elma"
+                   autocomplete="off" maxlength="120">
+          </div>
+          <div class="alan">
+            <label for="besin-kategori">Kategori</label>
+            <select id="besin-kategori"></select>
+          </div>
+          <button type="button" class="dugme dugme-ikincil arama-dugme" id="besin-ara">Ara</button>
+        </div>
+        <p class="alan-not" id="arama-durum"></p>
+
+        <div id="besin-sonuclari" class="besin-sonuclari"></div>
+
+        <!-- Seçilen besin + miktar formu -->
+        <form id="form-besin-ekle" class="ekle-formu" hidden>
+          <h3 class="alt-baslik">Seçilen besin</h3>
+          <div id="secili-besin" class="secili-besin"></div>
+
+          <div class="alan-izgara">
+            <div class="alan">
+              <label for="ekle-ogun">Öğün</label>
+              <select id="ekle-ogun" name="mealType">
+                <option value="breakfast">Kahvaltı</option>
+                <option value="lunch">Öğle yemeği</option>
+                <option value="dinner">Akşam yemeği</option>
+                <option value="snack">Ara öğün</option>
+              </select>
+            </div>
+            <div class="alan">
+              <label for="ekle-gram">Miktar (gram)</label>
+              <input type="number" id="ekle-gram" name="quantityGrams" min="0.1" max="10000"
+                     step="0.1" inputmode="decimal" required>
+              <p class="alan-not">0,1–10&nbsp;000 g arası. Negatif veya sıfır değer reddedilir.</p>
+            </div>
+          </div>
+
+          <div class="hizli-miktar" id="hizli-miktar"></div>
+
+          <div class="onizleme" id="ekle-onizleme"></div>
+          <p class="not">
+            Önizleme bilgilendirme amaçlıdır. Kaydedilen değer veritabanında
+            <code>fn_scale_per_100g()</code> ile hesaplanır; asıl kaynak SQL'dir.
+          </p>
+
+          <div class="dugme-satir">
+            <button type="submit" class="dugme dugme-birincil" id="ekle-gonder">Öğüne ekle</button>
+            <button type="button" class="dugme dugme-ikincil" id="ekle-vazgec">Vazgeç</button>
+          </div>
+          <div class="hata-kutusu" id="ekle-hata" role="alert" hidden></div>
+        </form>
+      </section>
+
+      <!-- BÖLÜM 6 — Öğün listeleri -->
+      <section aria-labelledby="b6-baslik">
+        <h2 class="bolum-baslik" id="b6-baslik">Öğünler</h2>
+        <div class="ogun-izgara" id="ogun-izgara"></div>
+      </section>
+
+    </div>
+
+    <!-- ============ PANEL: RAPORLAR ============ -->
+    <div class="panel" id="panel-raporlar" hidden>
+
+      <section class="kart" aria-labelledby="b7a-baslik">
+        <div class="baslik-satir">
+          <h2 class="kart-baslik" id="b7a-baslik">Günlük rapor</h2>
+          <button type="button" class="dugme dugme-ikincil dugme-kucuk" id="gunluk-yenile">Yenile</button>
+        </div>
+        <div id="gunluk-rapor"></div>
+      </section>
+
+      <section class="kart" aria-labelledby="b7b-baslik">
+        <div class="baslik-satir">
+          <h2 class="kart-baslik" id="b7b-baslik">Haftalık rapor</h2>
+          <div class="dugme-satir">
+            <button type="button" class="dugme dugme-ikon" id="hafta-geri" aria-label="Önceki hafta">&larr;</button>
+            <button type="button" class="dugme dugme-ikon" id="hafta-ileri" aria-label="Sonraki hafta">&rarr;</button>
+            <button type="button" class="dugme dugme-ikincil dugme-kucuk" id="haftalik-tazele">Veriden yeniden hesapla</button>
+          </div>
+        </div>
+        <p class="kart-aciklama">
+          Hafta <strong>Pazartesi–Pazar</strong> arasındadır (<code>DATE_TRUNC('week', …)</code>).
+          Rapor <code>weekly_reports</code> tablosunda önbelleğe alınır; kayıtlar değiştiğinde
+          bayatlama görünümü bunu tespit edip raporu yeniler.
+        </p>
+        <div id="haftalik-rapor"></div>
+      </section>
+    </div>
+
+    <!-- ============ PANEL: PROFİL ============ -->
+    <div class="panel" id="panel-profil" hidden>
+
+      <section class="kart" aria-labelledby="b8a-baslik">
+        <h2 class="kart-baslik" id="b8a-baslik">Profil bilgileri</h2>
+        <p class="kart-aciklama">
+          Kaydet düğmesi <strong>tam güncelleme</strong> yapar: boş bıraktığınız alan
+          veritabanında <code>NULL</code> olur. Bu bilinçli bir davranıştır —
+          "alanı temizlemek" ile "alanı göndermemek" ayrımı belirsizleşmesin diye.
+        </p>
+        <form id="form-profil" novalidate>
+          <div class="alan">
+            <label for="profil-ad">Ad</label>
+            <input type="text" id="profil-ad" name="name" maxlength="100" autocomplete="name">
+          </div>
+          <div class="alan-izgara">
+            <div class="alan">
+              <label for="profil-yas">Yaş</label>
+              <input type="number" id="profil-yas" name="age" min="1" max="120" step="1" inputmode="numeric">
+            </div>
+            <div class="alan">
+              <label for="profil-cinsiyet">Biyolojik cinsiyet</label>
+              <select id="profil-cinsiyet" name="biologicalSex"></select>
+              <p class="alan-not" id="cinsiyet-not"></p>
+            </div>
+            <div class="alan">
+              <label for="profil-boy">Boy (cm)</label>
+              <input type="number" id="profil-boy" name="heightCm" min="40" max="250" step="0.1" inputmode="decimal">
+            </div>
+            <div class="alan">
+              <label for="profil-kilo">Kilo (kg)</label>
+              <input type="number" id="profil-kilo" name="weightKg" min="2" max="400" step="0.1" inputmode="decimal">
+            </div>
+            <div class="alan alan-genis">
+              <label for="profil-aktivite">Aktivite düzeyi</label>
+              <select id="profil-aktivite" name="activityLevel"></select>
+              <p class="alan-not" id="aktivite-not"></p>
+            </div>
+            <div class="alan">
+              <label for="profil-hedef">Hedef</label>
+              <select id="profil-hedef" name="goal"></select>
+            </div>
+          </div>
+          <div class="alan">
+            <label for="profil-kisit">Beslenme kısıtlamaları (isteğe bağlı)</label>
+            <textarea id="profil-kisit" name="dietaryRestrictions" rows="2" maxlength="500"
+                      placeholder="ör. vejetaryen, laktoz intoleransı"></textarea>
+            <p class="alan-not">Yalnızca sizin görebildiğiniz serbest metin. Zorunlu değildir.</p>
+          </div>
+          <div class="hata-kutusu" id="profil-hata" role="alert" hidden></div>
+          <div class="dugme-satir">
+            <button type="submit" class="dugme dugme-birincil" id="profil-kaydet">Kaydet ve hedefleri yeniden hesapla</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="kart" aria-labelledby="b8b-baslik">
+        <h2 class="kart-baslik" id="b8b-baslik">Günlük hedefler ve bilimsel dayanakları</h2>
+        <div id="hedef-ozet"></div>
+      </section>
+
+      <section class="kart" aria-labelledby="b8c-baslik">
+        <h2 class="kart-baslik" id="b8c-baslik">Parola değiştir</h2>
+        <p class="kart-aciklama">
+          Parola değişince <strong>tüm oturumlar kapatılır</strong>; yeniden giriş yapmanız gerekir.
+        </p>
+        <form id="form-parola" novalidate>
+          <div class="alan">
+            <label for="parola-eski">Mevcut parola</label>
+            <input type="password" id="parola-eski" name="currentPassword" autocomplete="current-password" required maxlength="72">
+          </div>
+          <div class="alan">
+            <label for="parola-yeni">Yeni parola</label>
+            <input type="password" id="parola-yeni" name="newPassword" autocomplete="new-password"
+                   required minlength="8" maxlength="72">
+            <p class="alan-not">En az 8, en çok 72 karakter.</p>
+          </div>
+          <div class="hata-kutusu" id="parola-hata" role="alert" hidden></div>
+          <button type="submit" class="dugme dugme-ikincil" id="parola-gonder">Parolayı güncelle</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="altbilgi">
+  <div class="kapsayici">
+    <p>
+      Bu uygulama bir tıbbi cihaz veya teşhis aracı değildir. Beslenme değerleri kaynak
+      veritabanlarından gelir ve doğal değişkenlik gösterir. Sağlık durumunuzla ilgili
+      kararlar için bir hekime veya diyetisyene danışın.
+    </p>
+    <p class="altbilgi-ince">Veriler tarayıcıda kalıcı olarak saklanmaz; tek kaynak SQL veritabanıdır.</p>
+  </div>
+</footer>
+
+<div id="bildirim" class="bildirim" role="status" aria-live="polite" hidden></div>
+<div id="yukleniyor" class="yukleniyor" hidden><span></span><span></span><span></span></div>
+
+<script src="app.js"></script>
+</body>
+</html>

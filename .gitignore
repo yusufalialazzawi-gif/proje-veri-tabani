@@ -1,0 +1,39 @@
+# --- Sırlar: asla commit edilmez ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Bağımlılıklar ---
+node_modules/
+package-lock.json.bak
+
+# --- Çalışma zamanı / günlükler ---
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+*.pid
+
+# --- Test ve kapsama çıktıları ---
+coverage/
+.nyc_output/
+test-results/
+*.sqlite
+*.db
+
+# --- Editör / işletim sistemi ---
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Yerel veritabanı yedekleri ---
+database/backups/
+*.dump
+*.backup
+*.sql.gz
